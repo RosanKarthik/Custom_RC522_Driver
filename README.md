@@ -8,27 +8,6 @@ A complete and robust RFID/NFC driver for the RC522 module using STM32 HAL libra
 - ✅ Card detection and UID reading
 - ✅ Authentication (Key A/B)
 - ✅ Read/Write operations
-- ✅ Professional modular design
-- ✅ Error handling and validation
-- ✅ High-level convenience functions
-
-## Hardware Requirements
-
-- STM32 microcontroller (F4xx series tested)
-- RC522 RFID module
-- SPI interface connection
-- MIFARE Classic cards
-
-## Wiring
-
-| RC522 Pin | STM32 Pin | Description |
-|-----------|-----------|-------------|
-| VCC       | 3.3V      | Power       |
-| GND       | GND       | Ground      |
-| SCK       | SPI_SCK   | SPI Clock   |
-| MOSI      | SPI_MOSI  | SPI Data Out|
-| MISO      | SPI_MISO  | SPI Data In |
-| CS        | GPIO_PIN  | Chip Select |
 
 ## Quick Start
 
