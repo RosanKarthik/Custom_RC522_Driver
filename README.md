@@ -86,7 +86,7 @@ RC522_STATUS_TypeDef RC522_ReadCardBlock(RC522_InitTypeDef * RC,
                                          uint8_t keyType,    // 'A' or 'B'
                                          uint8_t blockAddr,
                                          uint8_t * data_out,
-                                         uint8_t * uid_out); // Optional
+                                         uint8_t * uid_out);
 ```
 
 #### `RC522_WriteCardBlock()`
@@ -97,7 +97,7 @@ RC522_STATUS_TypeDef RC522_WriteCardBlock(RC522_InitTypeDef * RC,
                                           uint8_t keyType,    // 'A' or 'B'
                                           uint8_t blockAddr,
                                           uint8_t * data_in,
-                                          uint8_t * uid_out); // Optional
+                                          uint8_t * uid_out);
 ```
 
 ### Low-Level Functions
@@ -170,19 +170,6 @@ int main(void) {
     }
 }
 ```
-
-## Block Structure
-
-MIFARE Classic 1K card has 64 blocks (0-63):
-- **Blocks 0-2, 4-6, 8-10, ...**: Data blocks
-- **Blocks 3, 7, 11, 15, ...**: Sector trailer (keys + access bits)
-- **Block 0**: Manufacturer data (read-only)
-
-## Default Keys
-
-Most MIFARE cards use default keys:
-- Key A: `FF FF FF FF FF FF`
-- Key B: `FF FF FF FF FF FF`
 
 ## Contributing
 
