@@ -57,18 +57,18 @@ RC522_STATUS_TypeDef RC522_Init(RC522_InitTypeDef * RC, SPI_HandleTypeDef * _SPI
 RC522_STATUS_TypeDef RC522_DeInit(RC522_InitTypeDef * RC);
 void RC522_Write_Reg(RC522_InitTypeDef * RC, uint8_t addr, uint8_t data);
 uint8_t RC522_Read_Reg(RC522_InitTypeDef * RC, uint8_t addr);
-RC522_STATUS_TypeDef RC522_Transceive(RC522_InitTypeDef * RC, uint8_t * sendData, uint8_t sendLen, uint8_t * receiveData, uint16_t * receiveLen);
+RC522_STATUS_TypeDef RC522_Transceive(RC522_InitTypeDef * RC, const uint8_t * sendData, uint8_t sendLen, uint8_t * receiveData, uint16_t * receiveLen);
 RC522_STATUS_TypeDef RC522_ReqA(RC522_InitTypeDef * RC, uint8_t *atqa);
 RC522_STATUS_TypeDef RC522_AntiCol(RC522_InitTypeDef * RC, uint8_t * uid);
-void RC522_CRC(RC522_InitTypeDef * RC, uint8_t * data, uint8_t dataLen, uint8_t * msb, uint8_t * lsb);
-void RC522_BCC(uint8_t * uid, uint8_t uidLen, uint8_t * bcc);
-RC522_STATUS_TypeDef RC522_SelectCard(RC522_InitTypeDef * RC, uint8_t * uid, uint8_t * SAK);
-RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC, uint8_t * uid, uint8_t * key, uint8_t keyType, uint8_t blockAddr);
-RC522_STATUS_TypeDef RC522_Read_Card(RC522_InitTypeDef * RC, uint8_t *uid, uint8_t *key, uint8_t keyType, uint8_t blockAddr, uint8_t *data_out);
-RC522_STATUS_TypeDef RC522_Write_Card(RC522_InitTypeDef * RC, uint8_t *uid, uint8_t *key, uint8_t keyType, uint8_t blockAddr, uint8_t * data_in);
+void RC522_CRC(RC522_InitTypeDef * RC, const uint8_t * data, uint8_t dataLen, uint8_t * msb, uint8_t * lsb);
+void RC522_BCC(const uint8_t * uid, uint8_t uidLen, uint8_t * bcc);
+RC522_STATUS_TypeDef RC522_SelectCard(RC522_InitTypeDef * RC, const uint8_t * uid, uint8_t * SAK);
+RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC, const uint8_t * uid, const uint8_t * key, uint8_t keyType, uint8_t blockAddr);
+RC522_STATUS_TypeDef RC522_Read_Card(RC522_InitTypeDef * RC, const uint8_t *uid, const uint8_t *key, uint8_t keyType, uint8_t blockAddr, uint8_t *data_out);
+RC522_STATUS_TypeDef RC522_Write_Card(RC522_InitTypeDef * RC, const uint8_t *uid, const uint8_t *key, uint8_t keyType, uint8_t blockAddr, const uint8_t * data_in);
 RC522_STATUS_TypeDef RC522_CheckForCard(RC522_InitTypeDef * RC, uint8_t * uid);
-RC522_STATUS_TypeDef RC522_ReadCardBlock(RC522_InitTypeDef * RC, uint8_t * key, uint8_t keyType, uint8_t blockAddr, uint8_t * data_out, uint8_t * uid_out);
-RC522_STATUS_TypeDef RC522_WriteCardBlock(RC522_InitTypeDef * RC, uint8_t * key, uint8_t keyType, uint8_t blockAddr, uint8_t * data_in, uint8_t * uid_out);
+RC522_STATUS_TypeDef RC522_ReadCardBlock(RC522_InitTypeDef * RC, const uint8_t * key, uint8_t keyType, uint8_t blockAddr, uint8_t * data_out, uint8_t * uid_out);
+RC522_STATUS_TypeDef RC522_WriteCardBlock(RC522_InitTypeDef * RC, const uint8_t * key, uint8_t keyType, uint8_t blockAddr, const uint8_t * data_in, uint8_t * uid_out);
 void RC522_HALT(RC522_InitTypeDef * RC);
 
 #endif

@@ -34,7 +34,7 @@ HAL_GPIO_WritePin(RC->_CSGPIOx,RC->_CSPIN,GPIO_PIN_RESET);
 
 //The Frame Format Is "MSB,6bitRegAddr,LSB"
 //The LSB must Always be RESET
-//To achieve this We Left Shit It To Move it in Place And RESET LSB
+//To achieve this We Left Shift It To Move it in Place And RESET LSB
 //To READ, we have to SET the MSB
 //We OR with 1000 0000 (80) to Set the MSB
 uint8_t read_addr_frmt=((addr<<1)| 0x80);
@@ -67,7 +67,8 @@ RC522_STATUS_TypeDef RC522_DeInit(RC522_InitTypeDef * RC) {
     RC->_SPI = NULL;
     RC->_CSGPIOx = NULL;
     RC->_CSPIN = 0;
-    
+    RC->initialized = false;
+
     return STATUS_OK;
 }
 
@@ -77,7 +78,7 @@ HAL_GPIO_WritePin(RC->_CSGPIOx,RC->_CSPIN,GPIO_PIN_RESET);
 
 //The Frame Format Is "MSB,6bitRegAddr,LSB"
 //The LSB must Always be RESET
-//To achieve this We Left Shit It To Move it in Place And RESET LSB
+//To achieve this We Left Shift It To Move it in Place And RESET LSB
 //To Write, we have to RESET the MSB
 //We AND with 0111 1110 (0x7E) to clear the MSB and LSB
 uint8_t wrt_addr_frmt=((addr<<1)& 0x7E);
@@ -94,8 +95,7 @@ HAL_GPIO_WritePin(RC->_CSGPIOx,RC->_CSPIN,GPIO_PIN_SET);
 
 RC522_STATUS_TypeDef RC522_Transceive(
 RC522_InitTypeDef * RC,
-// uint8_t Cmd,
-uint8_t * sendData,
+const uint8_t * sendData,
 uint8_t sendLen,
 uint8_t * receiveData,
 uint16_t * receiveLen
@@ -123,15 +123,6 @@ uint16_t * receiveLen
 
     //wait for reply
     uint16_t timeout=2000;
-    // do{
-    //     n=RC522_Read_Reg(RC,ComIrqReg);
-    //     timeout--;
-    // }
-    // while(
-    //     timeout!=0 && //Until it timesout
-    //     !(n&0x01) && //Until it is idle
-    //     !(n&RxEnd) //until the end of receive flag is set
-    // );
 
     while(1) {
         irq_val = RC522_Read_Reg(RC, ComIrqReg);
@@ -154,7 +145,7 @@ uint16_t * receiveLen
     //find how many bytes are in the FIFO buffer
     n=RC522_Read_Reg(RC,FIFOLevelReg);
 
-    //store the total number of bits to get the recieved amt of bits
+    //store the total number of bits to get the received amount of bits
     if (receiveLen) {
         if (n == 0) {
             *receiveLen = 0;
@@ -176,7 +167,7 @@ uint16_t * receiveLen
 
 RC522_STATUS_TypeDef RC522_ReqA(RC522_InitTypeDef * RC,uint8_t *atqa){
         RC522_STATUS_TypeDef status = STATUS_ERROR;
-        //Detecct a card if present by sending REQA
+        //Detect a card if present by sending REQA
         //If present it will return ATQA, which is of 2 bytes so we pass a array(buffer) to receive it.
         uint8_t reqa_cmd=REQA;
         uint16_t atqaLen=0;
@@ -184,7 +175,7 @@ RC522_STATUS_TypeDef RC522_ReqA(RC522_InitTypeDef * RC,uint8_t *atqa){
         // the REQ is only 7 bits so we,transmit only 7 bits by sending only the last 7 bits
         RC522_Write_Reg(RC,BitFramingReg,0x07);
         
-        //Send ReqA and check if we recieved ATQA (2bytes)
+        //Send ReqA and check if we received ATQA (2bytes)
         if(RC522_Transceive(RC,&reqa_cmd,1,atqa,&atqaLen)== STATUS_OK){
             if(atqaLen==16){ // 2 bytes * 8 bits = 16 bits
             status = STATUS_OK;
@@ -202,7 +193,7 @@ RC522_STATUS_TypeDef RC522_AntiCol(RC522_InitTypeDef * RC,uint8_t * uid){
 
         RC522_Write_Reg(RC,BitFramingReg,0x00);
 
-        //Send AntiCol Cmd and recieve its UID (5bytes)
+        //Send AntiCol Cmd and receive its UID (5bytes)
         if(RC522_Transceive(RC,antiCol_cmd,2,uid,&uidLen)== STATUS_OK){
             if(uidLen==40){ // 5 bytes * 8 bits = 40 bits
                 status = STATUS_OK;
@@ -212,7 +203,7 @@ RC522_STATUS_TypeDef RC522_AntiCol(RC522_InitTypeDef * RC,uint8_t * uid){
         return status;
 }
 
-void RC522_CRC(RC522_InitTypeDef * RC,uint8_t * data,uint8_t dataLen,uint8_t * msb, uint8_t * lsb){
+void RC522_CRC(RC522_InitTypeDef * RC, const uint8_t * data, uint8_t dataLen, uint8_t * msb, uint8_t * lsb){
     //send command to calculate crc
     uint8_t MSB=0;
     uint8_t LSB=0;
@@ -235,12 +226,12 @@ void RC522_CRC(RC522_InitTypeDef * RC,uint8_t * data,uint8_t dataLen,uint8_t * m
     MSB = RC522_Read_Reg(RC,CRCResultReg1);
     LSB = RC522_Read_Reg(RC,CRCResultReg2);
 
-    //combine into crc with bitmanuplation 
+    //store crc results
     *msb=MSB;
     *lsb=LSB;
 }
 
-void RC522_BCC(uint8_t * uid,uint8_t uidLen,uint8_t * bcc){
+void RC522_BCC(const uint8_t * uid, uint8_t uidLen, uint8_t * bcc){
     uint8_t result=0;
     for(uint8_t i=0;i<uidLen;i++){
         result^=uid[i];
@@ -248,7 +239,7 @@ void RC522_BCC(uint8_t * uid,uint8_t uidLen,uint8_t * bcc){
     *bcc=result;
 }
 
-RC522_STATUS_TypeDef RC522_SelectCard(RC522_InitTypeDef * RC,uint8_t * uid,uint8_t * SAK){
+RC522_STATUS_TypeDef RC522_SelectCard(RC522_InitTypeDef * RC, const uint8_t * uid, uint8_t * SAK){
     uint8_t crc_lsb,crc_msb,bcc;
     uint8_t select_cmd[9];
     uint16_t SAKLen=0;
@@ -277,7 +268,7 @@ RC522_STATUS_TypeDef RC522_SelectCard(RC522_InitTypeDef * RC,uint8_t * uid,uint8
     return status;
 }
 
-RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC,uint8_t * uid, uint8_t * key,uint8_t keyType, uint8_t blockAddr)
+RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC, const uint8_t * uid, const uint8_t * key, uint8_t keyType, uint8_t blockAddr)
 {
     RC522_STATUS_TypeDef status=STATUS_ERROR;
     uint8_t auth_cmd[12];
@@ -295,10 +286,8 @@ RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC,uint8_t * uid, uint8_t * 
 
     if (keyType == 'A') {
         auth_cmd[0] = AuthCmdA;
-    } else if (keyType == 'B') {
-        auth_cmd[0] = AuthCmdB;
     } else {
-        return STATUS_ERROR; // Invalid key type
+        auth_cmd[0] = AuthCmdB;
     }
     auth_cmd[1]=blockAddr;
     auth_cmd[2]=key[0];
@@ -316,7 +305,7 @@ RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC,uint8_t * uid, uint8_t * 
         return status;
     
     uint16_t timeout=5000;
-    while(--timeout && !(RC522_Read_Reg(RC,Status2Reg) & 0x08));// wait till timeout or succesfull auth
+    while(--timeout && !(RC522_Read_Reg(RC,Status2Reg) & 0x08));// wait till timeout or successful auth
 
     if(timeout){
         status=STATUS_OK;
@@ -326,8 +315,8 @@ RC522_STATUS_TypeDef RC522_Auth(RC522_InitTypeDef * RC,uint8_t * uid, uint8_t * 
 
 RC522_STATUS_TypeDef RC522_Read_Card(
     RC522_InitTypeDef * RC,
-    uint8_t *uid,
-    uint8_t *key,
+    const uint8_t *uid,
+    const uint8_t *key,
     uint8_t keyType,
     uint8_t blockAddr,
     uint8_t *data_out // buffer to store 16 bytes read from card
@@ -370,11 +359,11 @@ RC522_STATUS_TypeDef RC522_Read_Card(
 
 RC522_STATUS_TypeDef RC522_Write_Card(
     RC522_InitTypeDef * RC,
-    uint8_t *uid,
-    uint8_t *key,
+    const uint8_t *uid,
+    const uint8_t *key,
     uint8_t keyType,
     uint8_t blockAddr,
-    uint8_t * data_in
+    const uint8_t * data_in
 ) {
     RC522_STATUS_TypeDef status=STATUS_ERROR;
     uint8_t write_cmd[4],crc_msb,crc_lsb;
@@ -439,10 +428,14 @@ RC522_STATUS_TypeDef RC522_Write_Card(
 RC522_STATUS_TypeDef RC522_CheckForCard(RC522_InitTypeDef * RC,uint8_t * uid){
     RC522_STATUS_TypeDef status = STATUS_ERROR;
     uint8_t atqa[2]={0};
+    uint8_t SAK=0;
     if(RC522_ReqA(RC,atqa)==STATUS_ERROR){
         return status;
     }
     if(RC522_AntiCol(RC,uid)==STATUS_ERROR){
+        return status;
+    }
+    if(RC522_SelectCard(RC,uid,&SAK)==STATUS_ERROR){
         return status;
     }
     status=STATUS_OK;
@@ -451,7 +444,7 @@ RC522_STATUS_TypeDef RC522_CheckForCard(RC522_InitTypeDef * RC,uint8_t * uid){
 
 RC522_STATUS_TypeDef RC522_ReadCardBlock(
     RC522_InitTypeDef * RC,
-    uint8_t * key, 
+    const uint8_t * key, 
     uint8_t keyType,
     uint8_t blockAddr, 
     uint8_t * data_out,
@@ -487,10 +480,10 @@ RC522_STATUS_TypeDef RC522_ReadCardBlock(
 
 RC522_STATUS_TypeDef RC522_WriteCardBlock(
     RC522_InitTypeDef * RC, 
-    uint8_t * key, 
+    const uint8_t * key, 
     uint8_t keyType,
     uint8_t blockAddr, 
-    uint8_t * data_in,
+    const uint8_t * data_in,
     uint8_t * uid_out
 ) {
     uint8_t uid[5];
